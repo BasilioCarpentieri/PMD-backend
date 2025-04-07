@@ -46,7 +46,7 @@ def custom_openapi():
     )
     openapi_schema["servers"] = [
         {
-            "url": "https://pmd-backend-7t7z.onrender.com",
+            "url": "https://pmd-backend-t7zt.onrender.com",
             "description": "Render production server"
         }
     ]
