@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Body
 from pydantic import BaseModel
+from typing import Optional
 from supabase_client import save_session
 from fastapi.openapi.utils import get_openapi
 
@@ -13,15 +14,19 @@ class NewChatRequest(BaseModel):
     player_name: str
     genre: str
     prompt_input: str
-    session_data: dict
+    session_data: Optional[dict] = {}
 
-@app.post("/createNewChat")
-def create_new_chat(data: NewChatRequest):
+class NewChatResponse(BaseModel):
+    status: str
+    session: dict
+
+@app.post("/createNewChat", response_model=NewChatResponse)
+def create_new_chat(data: NewChatRequest = Body(...)):
     saved = save_session(
         data.player_name,
         data.genre,
         data.prompt_input,
-        data.session_data
+        data.session_data or {}
     )
     return {"status": "success", "session": saved}
 
@@ -29,7 +34,7 @@ def create_new_chat(data: NewChatRequest):
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# Override OpenAPI schema to point GPT to the Render URL
+# OpenAPI override
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
