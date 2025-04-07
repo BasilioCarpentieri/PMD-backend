@@ -10,16 +10,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow session_data to be optional
+# Input model
 class NewChatRequest(BaseModel):
     player_name: str
     genre: str
     prompt_input: str
-    session_data: Optional[dict] = None
+    session_data: Optional[dict] = None  # Allow this to be None
 
+# Response model (now allows session=None to avoid 500 if save_session returns nothing)
 class NewChatResponse(BaseModel):
     status: str
-    session: dict
+    session: Optional[dict] = None
 
 @app.post("/createNewChat", response_model=NewChatResponse)
 def create_new_chat(data: NewChatRequest = Body(...)):
@@ -27,7 +28,7 @@ def create_new_chat(data: NewChatRequest = Body(...)):
         data.player_name,
         data.genre,
         data.prompt_input,
-        data.session_data or {}  # fallback to empty dict
+        data.session_data or {}
     )
     return {"status": "success", "session": saved}
 
@@ -35,7 +36,7 @@ def create_new_chat(data: NewChatRequest = Body(...)):
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# Custom OpenAPI schema with correct server URL
+# Custom OpenAPI schema (correct server)
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -47,7 +48,7 @@ def custom_openapi():
     )
     openapi_schema["servers"] = [
         {
-            "url": "https://pmd-backend-t7zt.onrender.com",  # make sure this is the correct Render domain
+            "url": "https://pmd-backend-t7zt.onrender.com",
             "description": "Render production server"
         }
     ]
