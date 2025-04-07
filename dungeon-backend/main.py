@@ -25,12 +25,11 @@ def create_new_chat(data: NewChatRequest):
     )
     return {"status": "success", "session": saved}
 
-# Root route (optional, just for testing)
 @app.get("/")
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# Override OpenAPI schema with `servers` key
+# Override OpenAPI schema to point GPT to the Render URL
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -42,8 +41,8 @@ def custom_openapi():
     )
     openapi_schema["servers"] = [
         {
-            "url": "https://5c68cd04-07dc-4578-8794-60b83d8d50ed-00-21n85gz2g9qt6.spock.replit.dev",
-            "description": "Replit production server"
+            "url": "https://pmd-backend-7t7z.onrender.com",
+            "description": "Render production server"
         }
     ]
     app.openapi_schema = openapi_schema
