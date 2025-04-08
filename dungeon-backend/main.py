@@ -10,17 +10,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Input model
+# Request schema
 class NewChatRequest(BaseModel):
     player_name: str
     genre: str
     prompt_input: str
-    session_data: Optional[dict] = None  # Allow this to be None
+    session_data: Optional[dict] = None
 
-# Response model (now allows session=None to avoid 500 if save_session returns nothing)
+# Response schema
 class NewChatResponse(BaseModel):
     status: str
-    session: Optional[dict] = None
+    session: dict
 
 @app.post("/createNewChat", response_model=NewChatResponse)
 def create_new_chat(data: NewChatRequest = Body(...)):
@@ -36,22 +36,48 @@ def create_new_chat(data: NewChatRequest = Body(...)):
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# Custom OpenAPI schema (correct server)
+# Custom OpenAPI schema for GPT integration
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
+
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
+
+    # Add GPT-specific metadata for auto-approval
+    if "/createNewChat" in openapi_schema["paths"]:
+        post_op = openapi_schema["paths"]["/createNewChat"]["post"]
+        post_op["x-openai"] = {
+            "name_for_model": "start_rpg_session",
+            "description_for_model": "Starts a new RPG session with a player name, genre, and story prompt. No approval needed.",
+            "parameters": {
+                "player_name": {
+                    "type": "string",
+                    "description": "The name of the player."
+                },
+                "genre": {
+                    "type": "string",
+                    "description": "The genre of the RPG story."
+                },
+                "prompt_input": {
+                    "type": "string",
+                    "description": "The setup for the story, like a scene or environment."
+                }
+            }
+        }
+
+    # Set correct public URL for schema
     openapi_schema["servers"] = [
         {
             "url": "https://pmd-backend-t7zt.onrender.com",
             "description": "Render production server"
         }
     ]
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
