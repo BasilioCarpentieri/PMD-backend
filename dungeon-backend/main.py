@@ -18,7 +18,7 @@ app = FastAPI(
 API_KEY = os.getenv("API_KEY")
 
 # Dependency for key validation
-def validate_api_key(x_api_key: str = Header(...)):
+def validate_api_key(x_api_key: str = Header(..., alias="x-api-key")):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
