@@ -17,9 +17,12 @@ app = FastAPI(
 # Environment API key
 API_KEY = os.getenv("API_KEY")
 
-# Dependency for key validation
-def validate_api_key(x_api_key: str = Header(..., alias="x-api-key")):
-    if x_api_key != API_KEY:
+# Bearer token validator
+def validate_api_key(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+    token = authorization.split(" ")[1]
+    if token != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 # Input model
@@ -34,6 +37,7 @@ class NewChatResponse(BaseModel):
     status: str
     session: Optional[dict] = None
 
+# Protected route with Bearer Auth
 @app.post("/createNewChat", response_model=NewChatResponse, dependencies=[Depends(validate_api_key)])
 def create_new_chat(data: NewChatRequest = Body(...)):
     saved = save_session(
@@ -48,7 +52,7 @@ def create_new_chat(data: NewChatRequest = Body(...)):
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# OpenAPI customization for GPT use
+# OpenAPI schema override
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
