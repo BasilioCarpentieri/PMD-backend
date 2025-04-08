@@ -1,8 +1,12 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Header, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from supabase_client import save_session
 from fastapi.openapi.utils import get_openapi
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(
     title="Dungeon Master RPG API",
@@ -10,19 +14,27 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Request schema
+# Environment API key
+API_KEY = os.getenv("API_KEY")
+
+# Dependency for key validation
+def validate_api_key(x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+# Input model
 class NewChatRequest(BaseModel):
     player_name: str
     genre: str
     prompt_input: str
     session_data: Optional[dict] = None
 
-# Response schema
+# Response model
 class NewChatResponse(BaseModel):
     status: str
-    session: dict
+    session: Optional[dict] = None
 
-@app.post("/createNewChat", response_model=NewChatResponse)
+@app.post("/createNewChat", response_model=NewChatResponse, dependencies=[Depends(validate_api_key)])
 def create_new_chat(data: NewChatRequest = Body(...)):
     saved = save_session(
         data.player_name,
@@ -36,48 +48,22 @@ def create_new_chat(data: NewChatRequest = Body(...)):
 def root():
     return {"message": "Dungeon Master API is up."}
 
-# Custom OpenAPI schema for GPT integration
+# OpenAPI customization for GPT use
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
-
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
-
-    # Add GPT-specific metadata for auto-approval
-    if "/createNewChat" in openapi_schema["paths"]:
-        post_op = openapi_schema["paths"]["/createNewChat"]["post"]
-        post_op["x-openai"] = {
-            "name_for_model": "start_rpg_session",
-            "description_for_model": "Starts a new RPG session with a player name, genre, and story prompt. No approval needed.",
-            "parameters": {
-                "player_name": {
-                    "type": "string",
-                    "description": "The name of the player."
-                },
-                "genre": {
-                    "type": "string",
-                    "description": "The genre of the RPG story."
-                },
-                "prompt_input": {
-                    "type": "string",
-                    "description": "The setup for the story, like a scene or environment."
-                }
-            }
-        }
-
-    # Set correct public URL for schema
     openapi_schema["servers"] = [
         {
             "url": "https://pmd-backend-t7zt.onrender.com",
             "description": "Render production server"
         }
     ]
-
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
