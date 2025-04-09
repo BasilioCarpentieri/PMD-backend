@@ -22,6 +22,7 @@ Supabase provides the database + auto-generated API + access control (via RLS) i
 
 RLS auth policies
 INSERT: Allow insert access for all + Applied to:public role
+
 SELECT: Allow read access for all + Applied to:public role
 
 🌐 Render
