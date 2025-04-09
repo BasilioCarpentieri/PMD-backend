@@ -20,6 +20,10 @@ created_at (timestamp): automatically set when the session is created
 
 Supabase provides the database + auto-generated API + access control (via RLS) in one place.
 
+RLS auth policies
+INSERT: Allow insert access for all + Applied to:public role
+SELECT: Allow read access for all + Applied to:public role
+
 🌐 Render
 
 We created a Web Service in Render, which hosts the FastAPI backend. Render gives us a public HTTPS URL, which we plug into our FastAPI main.py so GPT knows where to call your backend from.
